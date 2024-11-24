@@ -1,0 +1,37 @@
+name: Deploy Virtual Desktop to Fly.io
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy-desktop:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Install Fly.io CLI
+      run: |
+        curl -L https://fly.io/install.sh | sh
+        export PATH="$HOME/.fly/bin:$PATH"
+
+    - name: Authenticate Fly.io
+      run: |
+        flyctl auth token ${{ secrets.FLY_API_TOKEN }}
+
+    - name: Initialize Fly.io App
+      run: |
+        flyctl apps create virtual-desktop --generate-name --region syd
+
+    - name: Deploy Virtual Desktop
+      run: |
+        flyctl deploy --image dorowu/ubuntu-desktop-lxde-vnc
+
+    - name: Show App URL
+      run: |
+        echo "Your virtual desktop is available at:"
+        flyctl info | grep "Hostname"
