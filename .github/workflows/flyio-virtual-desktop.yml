@@ -1,37 +1,38 @@
-name: Deploy Virtual Desktop to Fly.io
+name: Create Temporary RDP Server
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 jobs:
-  deploy-desktop:
+  setup-rdp:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v3
-
-    - name: Install Fly.io CLI
+    - name: Install Docker
       run: |
-        curl -L https://fly.io/install.sh | sh
-        export PATH="$HOME/.fly/bin:$PATH"
+        sudo apt-get update
+        sudo apt-get install -y docker.io
 
-    - name: Authenticate Fly.io
+    - name: Run RDP Server in Docker
       run: |
-        flyctl auth token ${{ secrets.FLY_API_TOKEN }}
+        # Pull and run a lightweight Ubuntu Docker container with RDP
+        docker run -d --name rdp-server -p 3389:3389 danielguerra/ubuntu-xrdp
 
-    - name: Initialize Fly.io App
+    - name: Generate RDP Credentials
+      id: creds
       run: |
-        flyctl apps create virtual-desktop --generate-name --region syd
+        # Generate a random username and password
+        USERNAME=rdpuser
+        PASSWORD=$(openssl rand -base64 12)
 
-    - name: Deploy Virtual Desktop
-      run: |
-        flyctl deploy --image dorowu/ubuntu-desktop-lxde-vnc
+        # Display the credentials
+        echo "USERNAME=${USERNAME}" >> $GITHUB_ENV
+        echo "PASSWORD=${PASSWORD}" >> $GITHUB_ENV
 
-    - name: Show App URL
+    - name: Output RDP Information
       run: |
-        echo "Your virtual desktop is available at:"
-        flyctl info | grep "Hostname"
+        echo "Your RDP server is running temporarily on this machine."
+        echo "Use the following credentials to connect:"
+        echo "Username: $USERNAME"
+        echo "Password: $PASSWORD"
+        echo "Address: $(curl -s ifconfig.me):3389"
