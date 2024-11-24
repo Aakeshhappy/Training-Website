@@ -1,0 +1,37 @@
+name: Deploy Flask App with API Key
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flask openai flask-cors
+
+    - name: Run Flask App
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      run: |
+        echo "from flask import Flask, request, jsonify" > app.py
+        echo "import os, openai" >> app.py
+        echo "app = Flask(__name__)" >> app.py
+        echo "openai.api_key = os.getenv('OPENAI_API_KEY')" >> app.py
+        echo "from flask_cors import CORS" >> app.py
+        echo "CORS(app)" >> app.py
+        echo "..." # Rest of your app.py logic
+        python app.py
